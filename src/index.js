@@ -1,35 +1,25 @@
+// create state and server
+// render based on state
+// update state and server
+// rerender
 
-
+const addImageForm = document.querySelector('.add-image-form')
+const searchForm = document.querySelector('.search-form')
 const imageContainerEl = document.querySelector('.image-container')
 
 const state = {
-  images: []
+  images: [],
+  filter: '' // this is state only, no server needed
 }
 
+// SERVER FUNCTIONS
+
+// getImages :: () => Promise<images>
 function getImages() {
   return fetch('http://localhost:3000/images').then(resp => resp.json()) // Promise<images>
 }
 
-function createLikeBtn(number, imageId){
-return fetch('http://localhost:3000/images', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      imageId: imageId,
-      likes: number
-    })
-  }).then(resp => resp.json())
-}
-
-function deleteTodoFromServer (id) {
-  return fetch(`http://localhost:3000/comments/${id}`, {
-    method: 'DELETE'
-  })
-}
-
-
+// createCommentOnServer :: (imageId: number, content: string) => Promise<comment>
 function createCommentOnServer(imageId, content) {
   return fetch('http://localhost:3000/comments', {
     method: 'POST',
@@ -40,6 +30,39 @@ function createCommentOnServer(imageId, content) {
       imageId: imageId,
       content: content
     })
+  }).then(resp => resp.json())
+}
+
+// createImageOnServer :: (title: string, imageSrc: string) => Promise<image>
+function createImageOnServer(title, imageSrc) {
+  return fetch('http://localhost:3000/images', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: title,
+      image: imageSrc,
+      likes: 0
+    })
+  }).then(resp => resp.json())
+}
+
+// updateImageOnServer :: (image: object) => Promise<image>
+function updateImageOnServer(image) {
+  return fetch(`http://localhost:3000/images/${image.id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(image)
+  }).then(resp => resp.json())
+}
+
+// deleteCommentOnServer :: (id: number) => Promise<{}>
+function deleteCommentOnServer(id) {
+  return fetch(`http://localhost:3000/comments/${id}`, {
+    method: 'DELETE'
   }).then(resp => resp.json())
 }
 
@@ -67,12 +90,14 @@ function renderImage(image) {
   likeBtn.setAttribute('class', 'like-button')
   likeBtn.textContent = '♥'
 
-  const likes = image.likes
+  likeBtn.addEventListener('click', function () {
+    // increase likes on state
+    image.likes++
 
+    // increase likes on server
+    updateImageOnServer({ id: image.id, likes: image.likes })
 
-  likeBtn.addEventListener('click', function (){
-    likesEl.textContent=likes
-    likes++
+    // render
     render()
   })
 
@@ -84,28 +109,118 @@ function renderImage(image) {
   for (const comment of image.comments) {
     const commentLi = document.createElement('li')
     commentLi.textContent = comment.content
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.textContent = '🗑'
+    deleteBtn.setAttribute('class', 'delete-comment-btn')
+
+    deleteBtn.addEventListener('click', function () {
+      // delete comment on server
+      deleteCommentOnServer(comment.id)
+
+      // delete comment on state
+      image.comments = image.comments.filter(function (targetComment) {
+        return targetComment.id !== comment.id
+      })
+
+      // render
+      render()
+    })
+
+    commentLi.append(deleteBtn)
+
     commentsList.append(commentLi)
   }
 
-  articleEl.append(titleEl, imgEl, buttonsDiv, commentsList)
+  const addCommentForm = document.createElement('form')
+  addCommentForm.setAttribute('class', 'comment-form')
+
+  const commentInput = document.createElement('input')
+  commentInput.setAttribute('type', 'text')
+  commentInput.setAttribute('class', 'comment-input')
+  commentInput.setAttribute('placeholder', 'Enter your comment...')
+  commentInput.setAttribute('name', 'comment')
+
+  addCommentForm.append(commentInput)
+
+  addCommentForm.addEventListener('submit', function (event) {
+    // prevent form from refreshing the page
+    event.preventDefault()
+
+    // create comment on server
+    createCommentOnServer(image.id, addCommentForm.comment.value).then(
+      function (newCommentFromServer) {
+        // add comment to state
+        image.comments.push(newCommentFromServer)
+
+        // render
+        render()
+      }
+    )
+  })
+
+  articleEl.append(titleEl, imgEl, buttonsDiv, commentsList, addCommentForm)
   imageContainerEl.append(articleEl)
 }
 
 function renderImages() {
-
+  // Destroy the images
   imageContainerEl.innerHTML = ''
 
-  for (const image of state.images) {
+  const imagesToShow = state.images.filter(image =>
+    image.title.toLowerCase().includes(state.filter.toLowerCase())
+  )
+
+  // Recreate the images
+  for (const image of imagesToShow) {
     renderImage(image)
   }
+}
+
+function listenToAddImageForm() {
+  addImageForm.addEventListener('submit', function (event) {
+    // prevent form from refreshing the page
+    event.preventDefault()
+
+    // add image on server
+    createImageOnServer(addImageForm.title.value, addImageForm.image.value) // Promise<image>
+      .then(function (imageFromServer) {
+        // add image on state
+        imageFromServer.comments = []
+        state.images.push(imageFromServer)
+
+        // rerender
+        render()
+        addImageForm.reset()
+      })
+  })
+}
+
+function listenToSearchForm() {
+  searchForm.addEventListener('submit', function (event) {
+    event.preventDefault()
+    // update filter
+    state.filter = searchForm.search.value
+    // rerender page
+    render()
+  })
 }
 
 function render() {
   renderImages()
 }
 
-render()
-getImages().then(function (images) {
-  state.images = images
+function init() {
   render()
-})
+  getImages().then(function (images) {
+    // we can guantee that this code runs:
+    // - if the fetch worked
+    // - when the image data is ready
+    state.images = images
+    render()
+  })
+  listenToAddImageForm()
+  listenToSearchForm()
+}
+
+init()

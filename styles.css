@@ -92,6 +92,10 @@ img {
 .comments li {
   margin: 2px 0;
   letter-spacing: 0.2px;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
 }
 
 .comment-form {
@@ -144,4 +148,8 @@ img {
 
 .comment-form.image-card .comment-button {
   font-size: 1rem;
+}
+
+form {
+  margin: 2rem;
 }

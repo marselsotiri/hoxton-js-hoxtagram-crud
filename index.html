@@ -10,44 +10,36 @@
     <!-- logo -->
     <img class="logo" src="assets/hoxtagram-logo.png" />
 
-    <!-- image cards -->
-
-    <!-- image cards -->
-    <section class="image-container">
-      <!-- This is the form for challenge 1, uncomment only after you finished the main task -->
-
-      <!-- <form class="comment-form image-card">
-        <h2 class="title">New Post</h2>
+    <section class="form-section">
+      <form class="add-image-form">
+        <h2>Add image</h2>
         <input
-          class="comment-input"
           type="text"
+          placeholder="Enter image title..."
           name="title"
-          id="title"
-          placeholder="Add a title..."
+          required
         />
         <input
-          class="comment-input"
           type="url"
+          placeholder="Enter image url..."
           name="image"
-          id="image"
-          placeholder="Add an image url..."
+          required
         />
-        <button class="comment-button" type="submit">Post</button>
-      </form> -->
+        <button type="submit">ADD IMAGE</button>
+      </form>
+    </section>
 
-      <!-- This is the Post card. Ust the following HTML as reference to build your cards using JS -->
+    <section class="search">
+      <h2>Search</h2>
+
+      <form class="search-form">
+        <input type="search" placeholder="Enter search..." name="search" />
+        <button type="submit">SEARCH</button>
+      </form>
+    </section>
+    <!-- image cards -->
     <section class="image-container">
       <!-- This is the HTML for each card. Use the following HTML as reference to build your cards using JS -->
-
-      <form class="comment-form">
-        <!-- <input
-          class="comment-input"
-          type="text"
-          name="comment"
-          placeholder="Add a comment..."
-        /> -->
-        <button class="comment-button" type="submit">Post</button>
-      </form>
     </section>
   </body>
 </html>
